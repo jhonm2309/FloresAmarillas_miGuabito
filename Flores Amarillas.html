@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Día de las flores amarillas — Sorpresa</title>
+  <style>
+    :root{--yellow:#FFEB3B;--accent:#f4c542;--bg:#fff9c4}
+    html,body{height:100%;margin:0;font-family:Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;}
+    body{background:linear-gradient(180deg,#fff8c0 0%,#fffde7 100%);display:flex;align-items:center;justify-content:center;padding:20px}
+    .card{max-width:880px;width:100%;background:rgba(255,255,255,0.86);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,0.08);padding:28px;position:relative;overflow:hidden}
+    .header{display:flex;align-items:center;gap:16px}
+    .logo{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#ffd54f,#ffb300);display:flex;align-items:center;justify-content:center;font-size:32px}
+    h1{margin:0;font-size:28px;color:#333}
+    p.lead{margin:6px 0 18px;color:#555}
+    .controls{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+    button{background:#f4c542;border:none;padding:10px 14px;border-radius:10px;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.08);font-weight:600}
+    .btn-outline{background:transparent;border:2px solid rgba(0,0,0,0.06)}
+    .phrase-box{min-height:80px;padding:18px;border-radius:12px;background:linear-gradient(180deg,#fffaf0,#fff);display:flex;align-items:center;justify-content:center;font-size:20px;color:#222}
+    .small{font-size:13px;color:#666;margin-top:8px}
+    .canvas{position:absolute;inset:0;pointer-events:none}
+    .footer{display:flex;gap:10px;align-items:center;margin-top:14px;justify-content:space-between}
+    @media(max-width:640px){.header{flex-direction:column;align-items:flex-start}.logo{width:60px;height:60px}h1{font-size:20px}}
+    .copied{background:#C8E6C9}
+  </style>
+</head>
+<body>
+  <div class="card" id="card">
+    <canvas id="bgCanvas" class="canvas" aria-hidden></canvas>
+
+    <div class="header">
+      <div class="logo" aria-hidden>💛</div>
+      <div>
+        <h1>Día de las flores amarillas</h1>
+        <p class="lead">No te mando flores... te mando algo que ilumine tus días.</p>
+      </div>
+    </div>
+
+    <div class="controls" role="group" aria-label="Controles">
+      <button id="btnGenerate">Generar frase</button>
+      <button id="btnPlay" class="btn-outline">Reproducir música</button>
+      <button id="btnDownload">Descargar carta</button>
+      <button id="btnCopy">Copiar mensaje</button>
+      <button id="btnShare">Abrir WhatsApp</button>
+    </div>
+
+    <div class="phrase-box" id="phraseBox">Haz clic en "Generar frase" para verla aquí ✨</div>
+
+    <div class="footer">
+      <div>
+        <label for="nameInput" class="small">Nombre (opcional): </label>
+        <input id="nameInput" placeholder="Su nombre..." style="padding:6px;border-radius:8px;border:1px solid #eee">
+      </div>
+    </div>
+
+    <!-- Si quieres música, coloca un archivo 'music.mp3' en la misma carpeta que este HTML -->
+    <audio id="bgMusic" autoplay loop>
+  <source src="Flores_Amarillas.mp3" type="audio/mpeg">
+  Tu navegador no soporta audio.
+</audio>
+  </div>
+
+  <script>
+  /* ---------------------------
+    Configuración — personaliza aquí
+  ----------------------------*/
+  const recipientDefault = ""; // Escribe aquí el nombre si quieres
+  const phrases = [
+    "Eres mi rayo de sol, incluso en los días nublados.",
+    "Contigo cada pequeño detalle se vuelve grande.",
+    "Si fueras color, serías el amarillo que alegra la mañana.",
+    "Quiero que este día te recuerde cuánto te pienso.",
+    "Si pudiera, llenaría tu ventana de amaneceres.",
+    "Eres mi motivo para celebrar las cosas pequeñas.",
+    "No hay flor que dure tanto como lo que siento por ti."
+  ];
+
+  // Helper
+  function byId(id){return document.getElementById(id)}
+
+  /* ---------- Tipo 'typewriter' para mostrar frases ---------- */
+  const phraseBox = byId('phraseBox')
+  function typeText(el, text, speed=30){
+    el.textContent = ''
+    let i = 0
+    const t = setInterval(()=>{ el.textContent += text.charAt(i); i++; if(i>=text.length) clearInterval(t) }, speed)
+  }
+
+  function buildMessage(text){
+    const name = byId('nameInput').value.trim() || recipientDefault
+    return name ? `${name}, ${text}` : text
+  }
+
+  byId('btnGenerate').addEventListener('click', ()=>{
+    const r = phrases[Math.floor(Math.random()*phrases.length)]
+    typeText(phraseBox, buildMessage(r), 20)
+    popupHearts()
+  })
+
+  /* ---------- Copiar al portapapeles ---------- */
+  byId('btnCopy').addEventListener('click', async ()=>{
+    const msg = phraseBox.textContent || "Te mando un abrazo amarillo 💛"
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(msg)
+      } else {
+        const ta = document.createElement('textarea'); ta.value = msg; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove()
+      }
+      const b = byId('btnCopy')
+      b.textContent = 'Copiado ✓'
+      b.classList.add('copied')
+      setTimeout(()=>{ b.textContent='Copiar mensaje'; b.classList.remove('copied') }, 1600)
+    } catch(e){
+      alert('No se pudo copiar automáticamente. Selecciona y copia manualmente.')
+    }
+  })
+
+  /* ---------- Descargar carta (archivo de texto) ---------- */
+  byId('btnDownload').addEventListener('click', ()=>{
+  const fullLetter = `
+Mi guabito hermoso:
+
+Hoy quiero regalarte palabras que lleven la esencia de este dia tan  especial,
+ porque para mi tu eres mi flor amarilla, 
+ la que ilumina y alegra mi vida con su presencia.
+
+Cada momento a tu lado me recuerda lo afortunado que soy por tenerte.
+Eres mi inspiracion, mi fuerza y mi razon de sonreir incluso en los dias grises.
+Tu voz, tu sonrisa, tu forma de ser y la manera en que haces brillar cada instante,
+son el regalo mas hermoso que la vida me ha dado.
+
+La distancia que hoy nos separa es solo fisica, porque mi alma late junto al tuyo en todo momento. 
+Quiero que cuando leas esta carta sientas mi abrazo,
+ mi cariño y mi promesa de estar contigo en cada paso 
+de nuestro camino.
+
+Gracias por ser tu, por hacer mi mundo más calido y por convertir
+cada dia en algo especial. Te amo más de lo que las palabras pueden decir,
+y hoy te lo recuerdo con esta carta amarilla que viaja directo a tu corazon.
+
+Siempre tuyo,   
+Jhon Moreira 
+  `
+
+  const blob = new Blob([fullLetter], {type:'text/plain;charset=utf-8'})
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(blob)
+  a.download = 'carta_amarilla.txt'
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+})
+
+
+  /* ---------- Compartir por WhatsApp (abre ventana con texto) ---------- */
+  byId('btnShare').addEventListener('click', ()=>{
+    const msg = phraseBox.textContent || "Te mando un abrazo amarillo y muchos besos mi cielo, te amo tanto tanto 💛"
+    const url = "https://wa.me/?text=" + encodeURIComponent(msg)
+    window.open(url, '_blank')
+  })
+
+  /* ---------- Música (colocar music.mp3 junto al HTML) ---------- */
+  const music = byId('bgMusic'), btnPlay = byId('btnPlay')
+  btnPlay.addEventListener('click', ()=>{
+    if(music.paused){
+      music.play().catch(()=>{ alert('No se pudo reproducir automáticamente. Haz clic en reproducir en el navegador.') })
+      btnPlay.textContent = 'Pausar música'
+      btnPlay.classList.remove('btn-outline')
+    } else {
+      music.pause()
+      btnPlay.textContent = 'Reproducir música'
+      btnPlay.classList.add('btn-outline')
+    }
+  })
+  music.volume = 0.6
+
+  /* ---------- Animación de fondo (canvas con pétalos/partículas) ---------- */
+  const canvas = byId('bgCanvas'), ctx = canvas.getContext('2d')
+  const cardEl = byId('card')
+  let W = canvas.width = cardEl.clientWidth, H = canvas.height = cardEl.clientHeight
+  window.addEventListener('resize', ()=>{ W = canvas.width = cardEl.clientWidth; H = canvas.height = cardEl.clientHeight })
+
+  let particles = []
+  function addParticle(x, y){
+    particles.push({
+      x: x || Math.random()*W,
+      y: y || -20,
+      vx: (Math.random()-0.5)*1.2,
+      vy: 1 + Math.random()*1.2,
+      r: 4 + Math.random()*6,
+      life: 80 + Math.random()*80,
+      tilt: Math.random()*Math.PI*2,
+      color: ['#FFD54F','#FFEB3B','#FFC107'][Math.floor(Math.random()*3)]
+    })
+  }
+
+  for(let i=0;i<40;i++) addParticle()
+
+  function update(){
+    ctx.clearRect(0,0,W,H)
+    for(let i=particles.length-1;i>=0;i--){
+      const p = particles[i]
+      p.x += p.vx + Math.sin(p.tilt)*0.4
+      p.y += p.vy
+      p.tilt += 0.01
+      p.life--
+      ctx.beginPath()
+      ctx.fillStyle = p.color
+      ctx.ellipse(p.x, p.y, p.r*1.2, p.r, p.tilt, 0, Math.PI*2)
+      ctx.fill()
+      if(p.y>H+50 || p.life<=0) particles.splice(i,1)
+    }
+    if(particles.length < 40) addParticle()
+    requestAnimationFrame(update)
+  }
+  update()
+
+  /* ---------- Corazones emergentes cuando se generan frases ---------- */
+  function popupHearts(){
+    for(let i=0;i<10;i++){
+      const span = document.createElement('span')
+      span.textContent = '💛'
+      span.style.position='absolute'
+      const left = Math.floor(20 + Math.random()*(cardEl.clientWidth-40))
+      span.style.left = left + 'px'
+      span.style.top = (cardEl.clientHeight - 120 + Math.random()*60)+'px'
+      span.style.fontSize = (14+Math.random()*18)+'px'
+      span.style.pointerEvents='none'
+      span.style.opacity = '0.95'
+      document.getElementById('card').appendChild(span)
+      const startTop = parseFloat(span.style.top)
+      let t=0
+      const id = setInterval(()=>{
+        t++
+        span.style.top = (startTop - t*2) + 'px'
+        span.style.opacity = (1 - t/40)
+        if(t>40){ clearInterval(id); span.remove() }
+      },16)
+    }
+  }
+
+  /* ---------- Notas rápidas ---------- */
+  /*
+   - Para cambiar las frases, edita el array 'phrases' más arriba.
+   - Para fijar el nombre del destinatario por defecto, escribe su nombre en recipientDefault.
+   - Si quieres música, coloca un archivo 'music.mp3' en la misma carpeta que este HTML.
+   - Para cambiar colores, modifica las variables CSS en :root o los colores en JS de 'particles'.
+  */
+  </script>
+</body>
+</html>
