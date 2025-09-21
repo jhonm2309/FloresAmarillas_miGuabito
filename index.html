@@ -143,7 +143,8 @@ Jhon Moreira
   `;
 
   // Crear el archivo con UTF-8 para reconocer tildes y emojis
-  const blob = new Blob([fullLetter], { type: 'text/plain;charset=utf-8' });
+    const bom = new Uint8Array([0xEF, 0xBB, 0xBF]);
+  const blob = new Blob([bom, fullLetter], { type: 'text/plain;charset=utf-8' });
 
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
@@ -252,5 +253,6 @@ Jhon Moreira
   </script>
 </body>
 </html>
+
 
 
